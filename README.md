@@ -3,7 +3,8 @@ Link to project:
 - https://av-f.github.io/E-Diary/
 
 Purpose:
-The purpose of this app is to serve as a virtual diary for users who prefer to go digital instead of using paper. All entries are saved to their device's local storage
+- The purpose of this app is to serve as a virtual diary for users who prefer to go digital instead of using paper
+- All entries are saved to their device's local storage
 
 CORE FEATURES:
 - View an Entry: Allows the user to select a date of an entry they want to see
