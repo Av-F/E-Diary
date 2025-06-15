@@ -1,0 +1,19 @@
+{
+  "name": "e-diary",
+  "version": "1.0.0",
+  "description": "Link to project:\r - https://av-f.github.io/E-Diary/",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "mysql": "^2.18.1"
+  }
+}
