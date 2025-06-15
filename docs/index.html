@@ -22,24 +22,24 @@
     </div>
     
   <div id="edit" class="hidden">
-    <input type="text" id="editDate" placeholder="Enter date (M/DD/YYYY)">
+    <input type="date" id="editDate">
     <button onclick="loadEntryForEdit()">Load Entry</button>
     <textarea id="editText" placeholder="Edit your thoughts here..."></textarea>
     <button onclick="saveEditedEntry()">Save Changes</button>
+ </div>
+
+  <div id="delete" class="hidden">
+    <input type="date" id="entryDelete">
+    <button onclick="readEntry('entryDelete', 'deleteResult')">View Entry</button>
+    <button onclick="deleteEntry('entryDelete', 'deleteResult')">Delete Entry</button>
+    <div id="deleteResult"></div>
   </div>
 
-    <div id="delete" class="hidden">
-      <input type="text" id="entryDelete" placeholder="Enter date (M/DD/YYYY)">
-      <button onclick="readEntry('entryDelete', 'deleteResult')">View Entry</button>
-      <button onclick="deleteEntry('entryDelete', 'deleteResult')">Delete Entry</button>
-      <div id="deleteResult"></div>
-    </div>
-
-    <div id="view" class="hidden">
-      <input type="text" id="entryDate" placeholder="Enter date (M/DD/YYYY)">
-      <button onclick="readEntry('entryDate', 'viewResult')">View Entry</button>
-      <div id="viewResult"></div>
-    </div>
+  <div id="view" class="hidden">
+    <input type="date" id="entryDate">
+    <button onclick="readEntry('entryDate', 'viewResult')">View Entry</button>
+    <div id="viewResult"></div>
+ </div>
   
   </div>
   <script src="script.js"></script>

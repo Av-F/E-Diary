@@ -18,14 +18,59 @@ function getDate(input) {
 function generateId() {
   return crypto.randomUUID();
 }
-// Function: getEntries(), return the list of entries or a blank if none exist
-function getEntries() {
-  return JSON.parse(localStorage.getItem("entries")) || [];
+
+//Function: saveEntryByDate(date, text) 
+async function saveEntryByDate(date, text) {
+  // Try block to test the code
+  try {
+    // generate an unique id for the entry
+    const id = generateId();
+    // Get the result when we fetch for entries
+    const res = await fetch('http://localhost:3000/api/entries', {
+      // Note we are using POST to get data  from web to store it
+      method: 'POST',
+      //Metadata  as JSON and what we are taking from JSON
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, date, text })
+    });
+    // Get the data from the result's json and return it, otherwise throw an error.
+    const data = await res.json();
+    return data;
+  } catch (err) {
+    console.error("Failed to save entry:", err);
+  }
 }
 
-// Function: SaveEntries(), save the entry
-function saveEntries(entries) {
-  localStorage.setItem("entries", JSON.stringify(entries));
+// Functiom: GetEntryByDate(date) 
+async function getEntryByDate(date) {
+  // Try block
+  try {
+    // Fetch the date and save it into result
+    const res = await fetch(`http://localhost:3000/api/entries/${date}`);
+    // If we don't get a result, return null
+    if (!res.ok) return null;
+    // Save the data from the result's json
+    const data = await res.json();
+    return data; // return the data 
+  } catch (err) { // Otherwise if something breaks, throw an error
+    console.error("Failed to fetch entry:", err);
+    return null;
+  }
+}
+
+// NEW: Delete a single entry from the backend
+async function deleteEntryByDate(date) {
+  // Try block
+  try {
+    // Fetch the result from the given data 
+    const res = await fetch(`http://localhost:3000/api/entries/${date}`, {
+      method: 'DELETE' // We are going to use delete as the method
+    });
+    const data = await res.json(); // get the data from the result's JSON
+    return data; //return the data
+  } catch (err) { // otherwise throw an error 
+    console.error("Failed to delete entry:", err);
+  }
 }
 
 /*writeEntry() 
@@ -34,129 +79,110 @@ function saveEntries(entries) {
                             Text
                             Space for next one
 */
-function writeEntry() {
-  // get the id, today's date and write the text
-    const id = generateId();  
-    const today = new Date().toLocaleDateString();
-    const text = document.getElementById("entryText").value.trim();
-  // If the text is empty, then alert the user that they cant save the date
-  if (text === "") {
+async function writeEntry() {
+  // Take the date using ISO and slice it so we only get the month, day, year
+  const today = new Date().toISOString().slice(0, 10);
+  // have the text be from the entry text trimmed down.
+  const text = document.getElementById("entryText").value.trim();
+  // If there is nothing written, then return an alert that we cant save an empty text
+  if (!text) {
     alert("Cannot save empty entry.");
     return;
   }
-  // Since we want to save the entries, pull from local storage
-  const entries = getEntries();
-  // Create a checker to see if there's already an entry existing
-  const alreadyExists = entries.some(entry => entry.date === today);
-  // if it does give an alert
-  if (alreadyExists) {
+  // create a variable that checks if there is an entry already written
+  const existing = await getEntryByDate(today); 
+  if (existing) { //If that vairable is not empty, alert user to edit instead
     alert("Entry already exists, Edit it instead.");
     return;
   }
-  // Otherwise, create a new dEntry using everything collected
-  const newEntry = new dEntry(id, today, text);
-  entries.push(newEntry);
-  // Set it into local storage
-  saveEntries(entries);
-  // Alert user of date
+  // otherwise run the save entry function and change the text to such
+  await saveEntryByDate(today, text);
   alert("Entry saved!");
   document.getElementById("entryText").value = "";
   hideAll();
 }
 
+
 /*readEntry(inputID = "entryDate", resultID ="viewResult") 
 give a date, should parse through the entry until you reach the date and reads that section
 */
-function readEntry(inputID = "entryDate", resultID ="viewResult") {
-  // Get the date, entries and the result
+async function readEntry(inputID = "entryDate", resultID = "viewResult") {
+  // Get the date and the result 
   const date = getDate(inputID);
-  const entries = getEntries();
   const result = document.getElementById(resultID);
-  result.innerHTML = "";
-  // If we don't have a date, ask the user for the date
+  result.innerHTML = ""; //set the inner html to blank
+  // if the date doesnt exist, ask user for it
   if (!date) {
     alert("Please enter a date.");
     return;
   }
-   // Then find the date and match it with the target date
-  const match = entries.find(e => e.date === date);
-  if (match) {
-    result.innerHTML = `<strong>${match.date}:</strong><br>${match.entry}`;
+  // otherwise get the entry and if it exists switch the innerhtml to it
+  const entry = await getEntryByDate(date);
+  if (entry) {
+    result.innerHTML = `<strong>${entry.date}:</strong><br>${entry.text}`;
   } else {
-    result.innerHTML = "No entry found for that date.";
+    result.innerHTML = "No entry found for that date."; //otherwise return that we cant find it 
   }
 }
+
 /* Function loadEntryForEdit()
 Given a date, should find entry then allow the user to edit their work*/
-function loadEntryForEdit() {
-  // Get the date and the entries
+async function loadEntryForEdit() {
+  // Get the date selected
   const date = getDate("editDate");
-  const entries = getEntries();
-  // Find the specific entry
-  const entry = entries.find(e => e.date === date);
-  if (entry) {
-    // If we find it, load the entry in the edit box
-    document.getElementById("editText").value = entry.entry;
-  } else { // Otherwise, tell user that there is no entry
+  const entry = await getEntryByDate(date); // get the entry from what we want
+  if (entry) { // If there is an entry, set the html to display the entry's text
+    document.getElementById("editText").value = entry.text;
+  } else { // Otherwise alert user that there is no entry for that date
     alert("No entry found for that date.");
     document.getElementById("editText").value = "";
   }
 }
-// Function saveEditedEntry() Save the entry once done
-function saveEditedEntry() {
-  //Retrieve the date and text
+// Function: saveEditedEntry()
+async function saveEditedEntry() {
+  // Get the date and text
   const date = getDate("editDate");
   const newText = document.getElementById("editText").value.trim();
-  // get the list of entries
-  let entries = getEntries();
-  //Get the index by finding the date
-  const index = entries.findIndex(e => e.date === date);
-  // if the index in the array exits
-  if (index !== -1) {
-    entries[index].entry = newText; // Set entry to whats in the new text
-    saveEntries(entries); // Update localSotrage
-    alert("Entry updated successfully!"); // alert the user
-    document.getElementById("editText").value = ""; //reset the edit text and date to blank
-    document.getElementById("editDate").value = "";
-    hideAll();
-  } else { // Otherwise tell user nothing found
-    alert("Failed to update. Entry not found.");
-  }
-}
-//Function deleteEntry(), allows user to delete the entry
-function deleteEntry(inputID = "entryDelete", resultID ="DeleteResult") {
- // Do one last check to see if the user wants to delete the entry
-  if (!confirm("Are you sure you want to delete this entry? Hit \"ok\" to proceed with deletion")) {
+  if (!newText) { //If there is no text, then alert user
+    alert("Cannot save empty entry.");
     return;
   }
-  // get the date
+  await saveEntryByDate(date, newText); // Same API for new + updated
+  alert("Entry updated successfully!"); //reset the editText and Date
+  document.getElementById("editText").value = "";
+  document.getElementById("editDate").value = "";
+  hideAll();
+}
+
+//Function deleteEntry(), allows user to delete the entry
+async function deleteEntry(inputID = "entryDelete", resultID = "deleteResult") {
+  //Check if the user really wants to delete that entry
+  if (!confirm("Are you sure you want to delete this entry? Hit \"ok\" to proceed.")) {
+    return;
+  }
+  //if so, get the date from the user input
   const date = getDate(inputID);
-  // If we don't have a date, ask the user for the date
-  if (!date) {
+  const result = document.getElementById(resultID); //save the result
+  result.innerHTML = ""; //make the inner html blank
+
+  if (!date) { //If no date is selected, alert the user to enter a date
     alert("Please enter a date.");
     return;
   }
-  // Get the list of entries
-  const entries = getEntries();
-  // pull up the html
-  const result = document.getElementById(resultID);
-  result.innerHTML = "";
-  
-  // Then find the date and match it with the target date 
-  const match = entries.find(e => e.date === date);
-  
-  // If we get a match, create a filter entries and save that filtered
-  if (match) {
-  const filtered = entries.filter(entry => entry.date !== date);
-  alert("Entry deleted!");
-  saveEntries(filtered);
+  // Check if there is an existing entry for selected date
+  const existing = await getEntryByDate(date);
+  if (!existing) { // If there isn't then return that there is no entry
+    result.innerHTML = "No entry found for that date.";
+    return;
+  }
+  //Otherwise, call deleteEntryByDate and delete the entry
+  await deleteEntryByDate(date);
+  alert("Entry deleted!"); // Tell the user that it's done
+  result.innerHTML = "Entry Deleted!";
   document.getElementById(inputID).value = "";
-  //update the inner html
-  result.innerHTML = "Entry Deleted!"; // Also return that its gone in result
-} else {
-    result.innerHTML = "No entry found for that date."; // return error message
-  } 
 }
+
+
 
 // The show functions show the prompts needed per button function
 function showWrite() {
